@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* styling TOC */
+
+:is(h2, h3, h4) {
+  transition: 0.3s;
+}
+
+.toc-clicked {
+  @apply text-primary;
+}
+
+aside.toc.mobile {
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.4));
+  box-shadow: black;
+}
+
+aside.toc.desktop>nav {
+  @apply bg-base-100;
+}
+
+aside.toc.mobile>nav {
+  @apply bg-base-300 pb-5 rounded-xl border;
+}
+
+aside.toc>nav>ol>li.active {
+  @apply bg-transparent border-l border-primary !important;
+  border-left: 1px solid red;
+  border-radius: 0;
+  transition: 0.3s;
+}
