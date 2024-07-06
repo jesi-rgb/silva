@@ -1,77 +1,76 @@
 <script lang="ts">
-    import { T } from '@threlte/core'
-    import { RoundedBoxGeometry, interactivity } from '@threlte/extras'
-    import { SheetObject } from '@threlte/theatre'
-    import { DEG2RAD } from 'three/src/math/MathUtils.js'
-
+    import { onMount } from 'svelte'
     import { Canvas } from '@threlte/core'
-    import { Theatre } from '@threlte/theatre'
-    import state from './state.json'
+    import { Theatre, SheetObject, Project, Sheet } from '@threlte/theatre'
+    import type { IProject, ISheet } from '@theatre/core'
+
+    let scrollY
+    let innerHeight
+    let outerHeight
+
+    let project: IProject, sheet: ISheet
+
+    $: scrollProgress = Math.min(scrollY / (outerHeight - innerHeight), 1)
+
+    const config = {
+        position: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        rotation: {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+    }
+
+    let animatedObject
+
+    onMount(() => {
+        const sequence = sheet.sequence
+
+        sequence.attachRafDriver({
+            name: 'scroll',
+            rate: 1,
+            range: [0, 1],
+            update: (newTick) => {
+                sequence.position = newTick
+            }
+        })
+    })
+
+    $: if (animatedObject && typeof scrollProgress !== 'undefined') {
+        sheet.sequence.position = scrollProgress
+    }
 </script>
 
-<div class="border h-[80vh] w-full">
+<svelte:window bind:scrollY bind:innerHeight bind:outerHeight />
+
+<div style="height: 300vh;">
     <Canvas>
-        <Theatre
-            config={{
-                state
-            }}
-        >
-            <SheetObject key="Directional Light" let:Sync let:Transform>
-                <T.DirectionalLight castShadow>
-                    <Sync intensity color />
-                </T.DirectionalLight>
-            </SheetObject>
-
-            <SheetObject key="Ambient Light" let:Sync>
-                <T.AmbientLight>
-                    <Sync intensity color />
-                </T.AmbientLight>
-            </SheetObject>
-
-            <T.PerspectiveCamera
-                makeDefault
-                position={[5, 2, 5]}
-                on:create={({ ref }) => {
-                    ref.lookAt(0, 0, 0)
-                }}
-            />
-
-            <SheetObject
-                key="Box"
-                let:Sync
-                let:select
-                let:deselect
-                let:Transform
-            >
-                <T.Mesh
-                    on:click={select}
-                    on:pointermissed={deselect}
-                    castShadow
+        <Project bind:project>
+            <Sheet bind:sheet>
+                <SheetObject
+                    bind:self={animatedObject}
+                    {sheet}
+                    {config}
+                    let:position
+                    let:rotation
                 >
-                    <RoundedBoxGeometry radius={0.4} />
-                    <T.MeshStandardMaterial color="hotpink" let:ref>
-                        <Sync
-                            type={ref}
-                            color
-                            roughness
-                            metalness
-                            side
-                            opacity
-                        />
-                    </T.MeshStandardMaterial>
-                </T.Mesh>
-            </SheetObject>
+                    <mesh {position} {rotation}>
+                        <boxGeometry args={[1, 1, 1]} />
+                        <meshStandardMaterial color="#ff3e00" />
+                    </mesh>
+                </SheetObject>
 
-            <SheetObject key="circle" let:Transform>
-                <T.Mesh
-                    receiveShadow
-                    position.y={-1}
-                    rotation.x={-90 * DEG2RAD}
-                >
-                    <T.CircleGeometry args={[1.4, 48]} />
-                    <T.MeshStandardMaterial />
-                </T.Mesh>
-            </SheetObject>
-        </Theatre>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 10]} />
+            </Sheet>
+        </Project>
     </Canvas>
+</div>
+
+<div style="position: fixed; top: 10px; left: 10px; color: white;">
+    Scroll Progress: {scrollProgress.toFixed(2)}
 </div>
